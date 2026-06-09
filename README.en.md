@@ -1,9 +1,9 @@
 # Network Chat
 
-[![CI](https://github.com/krotname/Network-Chat/actions/workflows/ci.yml/badge.svg)](https://github.com/krotname/Network-Chat/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/krotname/Network-Chat/actions/workflows/codeql.yml/badge.svg)](https://github.com/krotname/Network-Chat/actions/workflows/codeql.yml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/Network-Chat/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/Network-Chat)
-[![coverage](https://img.shields.io/badge/coverage-70%2B-green)](https://github.com/krotname/Network-Chat/actions/workflows/ci.yml)
+[![CI](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/JavaNetworkChat/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/JavaNetworkChat)
+[![coverage](https://img.shields.io/badge/coverage-70%2B-green)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
 [![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
@@ -79,7 +79,7 @@ and explicit licensing/operating docs.
 ## Language
 
 - English project documentation in this file.
-- Russian project documentation in `Readme.md`.
+- Russian project documentation in `README.md`.
 
 ## Why this repository is designed for review
 
