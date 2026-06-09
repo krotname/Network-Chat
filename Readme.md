@@ -7,23 +7,19 @@
 [![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-## What this project demonstrates
+Документация на английском языке: [README.en.md](README.en.md).
 
-Network Chat is a Java 21 chat application over TCP sockets with:
+## Что проект демонстрирует
 
-- a resilient server with user handshake and broadcast.
-- a console client.
-- a bot client with date/time commands.
-- a Swing GUI client using MVC style structure.
-- a production-like project layout with Gradle, tests, and CI.
+Network Chat — это Java 21 приложение для сетевого чата поверх TCP сокетов с акцентом на качество разработки:
 
-## Run locally
+- сервер с handshake и рассылкой сообщений;
+- консольный клиент;
+- бот-клиент с командами времени/даты;
+- GUI клиент на Swing с разделением на MVC;
+- структуру продакшн-проекта с Gradle, тестами и CI.
 
-### Prerequisites
-
-- Java 21+
-
-### Commands
+## Запуск
 
 ```bash
 ./gradlew runServer --args="--port 1500"
@@ -32,69 +28,36 @@ Network Chat is a Java 21 chat application over TCP sockets with:
 ./gradlew runGuiClient
 ```
 
-Server and clients can also be run directly with Java by building jars from Gradle.
-
-## Project structure
-
-- `src/main/java` — core application classes.
-- `src/test/java` — unit tests.
-- `src/integrationTest/java` — protocol and network integration tests.
-- `src/uiTest/java` — Swing smoke tests.
-- `.github/workflows` — CI, CodeQL and Scorecard workflows.
-
-## Testing
+## Тесты и качество
 
 - `./gradlew test`
 - `./gradlew integrationTest`
 - `./gradlew uiTest`
 - `./gradlew check`
+- `./gradlew jacocoAllReport`
 - `./gradlew jacocoTestCoverageVerification`
-- `./gradlew jacocoAllReport` (CI artifact source)
 
-Coverage thresholds are enforced in Gradle and CI.
+## Стратегия тестирования
 
-### Test strategy
+- **Unit-тесты** (`src/test/java`) — протокол и модель GUI.
+- **Интеграционные тесты** (`src/integrationTest/java`) — подключение нескольких клиентов к серверу и обмен сообщениями.
+- **UI smoke тесты** (`src/uiTest/java`) — проверка отрисовки состояния окна чата.
+- **План роста** — контракты протокола и матрицы негативных сценариев (подключение дубликатов, некорректные пакеты).
 
-- **Unit tests** (`src/test/java`) check protocol and UI model invariants.
-- **Integration tests** (`src/integrationTest/java`) exercise full server/client socket flow with multiple peers.
-- **UI smoke tests** (`src/uiTest/java`) verify Swing state rendering.
-- **Future hardening tests**: contract validation and error-handling matrix can be added in the same
-  structure.
+Для оценки покрытия используется JaCoCo: в CI порог для ядра (`network` + `protocol`) — `70%/55%` (`line`/`branch`).
 
-## Quality gates
+## Структура репозитория
 
-The repository runs:
+- `src/main/java` — код приложения.
+- `src/test/java` — unit-тесты.
+- `src/integrationTest/java` — интеграционные тесты.
+- `src/uiTest/java` — smoke тесты UI.
+- `.github/workflows` — CI и проверки безопасности.
 
-- `checkstyle` for style and API cleanliness,
-- `spotless` for deterministic formatting,
-- `spotbugs` for bug-pattern analysis,
-- `jaCoCo` line/branch coverage gate on core network/protocol layers (`70%/55%`),
-- GitHub Actions pipeline on Linux + Windows,
-- dependency and workflow update signals via Dependabot,
-- CodeQL and OpenSSF Scorecard security scans.
+## Дополнительные сигналы качества
 
-The quality surface is intentionally structured for a public review: clean `main` surface, automated checks,
-and explicit licensing/operating docs.
-
-## Language
-
-- English project documentation in this file.
-- Russian documentation in `README.ru.md`.
-
-## Why this repository is designed for review
-
-This repository is organized to be review-friendly:
-
-- explicit package structure,
-- reproducible build and command surface (`./gradlew`),
-- consistent protocol encoding,
-- targeted comments in non-trivial methods,
-- automated quality gates.
-
-## Additional review signals
-
-- Linux + Windows CI matrix for broader platform evidence.
-- Automated quality gates via Checkstyle, Spotless, SpotBugs and JaCoCo.
-- Security checks via CodeQL and OpenSSF Scorecard.
-- Dependency and workflow automation via Dependabot.
-- Explicit contributor and security docs.
+- CI на Linux и Windows.
+- Авто-проверки: Checkstyle, Spotless, SpotBugs, JaCoCo.
+- Security проверки: CodeQL и OpenSSF Scorecard.
+- Dependabot для обновлений зависимостей и Actions.
+- Явно оформленные файлы `CONTRIBUTING.md` и `SECURITY.md`.
