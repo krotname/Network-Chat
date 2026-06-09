@@ -24,8 +24,8 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:6.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params:6.1.0")
     testImplementation("org.awaitility:awaitility:4.2.1")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
