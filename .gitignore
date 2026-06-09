@@ -1,0 +1,14 @@
+.gradle/
+build/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+out/
+bin/
+*.log
+*.tmp
+*.class
+*.swp
+*~

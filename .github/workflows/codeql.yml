@@ -1,0 +1,34 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1"
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+      - name: Prepare for analysis
+        run: ./gradlew testClasses integrationTestClasses uiTestClasses
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
