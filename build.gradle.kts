@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.10.1")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
