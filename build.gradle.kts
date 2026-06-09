@@ -4,7 +4,7 @@ plugins {
     jacoco
     id("com.diffplug.spotless") version "6.25.0"
     id("checkstyle")
-    id("com.github.spotbugs") version "6.0.12"
+    id("com.github.spotbugs") version "6.5.5"
 }
 
 group = "dev.krotname"
