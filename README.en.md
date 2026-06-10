@@ -7,7 +7,7 @@
 [![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-## What this project demonstrates
+## Capabilities
 
 Network Chat is a Java 21 chat application over TCP sockets with:
 
@@ -15,7 +15,7 @@ Network Chat is a Java 21 chat application over TCP sockets with:
 - a console client.
 - a bot client with date/time commands.
 - a Swing GUI client using MVC style structure.
-- a production-like project layout with Gradle, tests, and CI.
+- reproducible Gradle build, tests, CI, and quality gates.
 
 ![Swing GUI client](docs/images/gui-client.svg)
 
@@ -92,17 +92,17 @@ The repository runs:
 - grouped dependency and workflow update signals via Dependabot,
 - CodeQL and OpenSSF Scorecard security scans.
 
-The quality surface is intentionally structured for a public review: clean `main` surface, automated checks,
-and explicit licensing/operating docs.
+The quality surface keeps the `main` branch auditable and maintainable through automated checks,
+explicit licensing, and operating docs.
 
 ## Language
 
 - English project documentation in this file.
 - Russian project documentation in `README.md`.
 
-## Why this repository is designed for review
+## Maintenance model
 
-This repository is organized to be review-friendly:
+This repository is organized for maintainability:
 
 - explicit package structure,
 - reproducible build and command surface (`./gradlew`),
@@ -110,7 +110,7 @@ This repository is organized to be review-friendly:
 - targeted comments in non-trivial methods,
 - automated quality gates.
 
-## Additional review signals
+## Additional quality signals
 
 - Linux + Windows CI matrix for broader platform evidence.
 - Automated quality gates via Checkstyle, Spotless, SpotBugs and JaCoCo.
