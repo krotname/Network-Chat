@@ -7,6 +7,8 @@
 [![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
+![Java Network Chat](docs/assets/project-icon.svg)
+
 Документация на английском языке: [README.en.md](README.en.md).
 
 ## Что проект демонстрирует
