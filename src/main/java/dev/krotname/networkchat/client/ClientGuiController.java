@@ -2,6 +2,7 @@ package dev.krotname.networkchat.client;
 
 import dev.krotname.networkchat.client.gui.ChatWindow;
 import dev.krotname.networkchat.client.gui.ClientGuiModel;
+import dev.krotname.networkchat.protocol.ChatMessage;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /** GUI-specific client controller. */
@@ -62,8 +63,8 @@ public final class ClientGuiController extends ChatClient {
       justification = "Inner thread intentionally uses outer controller for UI callbacks.")
   public final class GuiSocketThread extends SocketThread {
     @Override
-    protected void processIncomingMessage(String message) {
-      model.setNewMessage(message);
+    protected void processIncomingMessage(ChatMessage message) {
+      model.setNewMessage(formatTextMessage(message));
       view.refreshMessages();
     }
 
@@ -80,7 +81,7 @@ public final class ClientGuiController extends ChatClient {
     }
 
     @Override
-    protected void notifyConnectionStatusChanged(boolean clientConnected) {
+    protected void onConnectionStatusChanged(boolean clientConnected) {
       view.notifyConnectionStatusChanged(clientConnected);
     }
   }

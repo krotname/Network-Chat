@@ -1,11 +1,13 @@
 package dev.krotname.networkchat.client;
 
+import dev.krotname.networkchat.protocol.ChatMessage;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -67,13 +69,20 @@ public final class BotChatClient extends ChatClient {
     return Collections.unmodifiableMap(map);
   }
 
-  private void answerCommand(String sender, String command) {
+  String answerForCommand(ChatMessage message) {
+    if (message == null
+        || message.sender() == null
+        || message.sender().isBlank()
+        || message.data() == null) {
+      return null;
+    }
+    String command = message.data().trim().toLowerCase(Locale.ROOT);
     DateTimeFormatter formatter = COMMANDS.get(command);
     if (formatter == null) {
-      return;
+      return null;
     }
     String answer = LocalDateTime.now(clock).format(formatter);
-    sendTextMessage(String.format("Информация для %s: %s", sender, answer));
+    return String.format("Информация для %s: %s", message.sender(), answer);
   }
 
   private final class BotSocketThread extends SocketThread {
@@ -87,17 +96,11 @@ public final class BotChatClient extends ChatClient {
     }
 
     @Override
-    protected void processIncomingMessage(String message) {
-      if (message == null || !message.contains(": ")) {
-        return;
+    protected void processIncomingMessage(ChatMessage message) {
+      String answer = answerForCommand(message);
+      if (answer != null) {
+        sendTextMessage(answer);
       }
-      String[] chunks = message.split(": ", 2);
-      if (chunks.length != 2) {
-        return;
-      }
-      String sender = chunks[0];
-      String command = chunks[1].trim().toLowerCase();
-      answerCommand(sender, command);
     }
 
     @Override

@@ -1,10 +1,12 @@
 package dev.krotname.networkchat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.krotname.networkchat.network.ChatConnection;
 import dev.krotname.networkchat.network.ChatServer;
+import dev.krotname.networkchat.network.ChatServerConfig;
 import dev.krotname.networkchat.protocol.ChatMessage;
 import dev.krotname.networkchat.protocol.MessageType;
 import java.io.IOException;
@@ -34,7 +36,7 @@ class NetworkChatIntegrationTest {
         assertTrue(server.getConnectedUsers().contains("bob"));
 
         alice.sendText("Привет всем");
-        awaitTextContains(bob, "alice: Привет всем");
+        awaitTextMessage(bob, "alice", "Привет всем");
       }
     }
   }
@@ -103,6 +105,46 @@ class NetworkChatIntegrationTest {
     }
   }
 
+  @Test
+  void serverRejectsConnectionsOverConfiguredLimit() throws Exception {
+    int port = randomFreePort();
+    ChatServerConfig config =
+        new ChatServerConfig(port, 1, Duration.ofSeconds(2), Duration.ofSeconds(5));
+    try (ChatServer server = new ChatServer(config)) {
+      server.start();
+      server.awaitStarted();
+
+      try (TestClient alice = new TestClient("alice", port)) {
+        alice.connect();
+        Socket rejectedSocket = new Socket("127.0.0.1", port);
+        rejectedSocket.setSoTimeout((int) TimeUnit.SECONDS.toMillis(2));
+        try (ChatConnection rejected = new ChatConnection(rejectedSocket)) {
+          ChatMessage response = rejected.receive();
+          assertEquals(MessageType.ERROR, response.type());
+          assertTrue(response.data().contains("busy"));
+        }
+      }
+    }
+  }
+
+  @Test
+  void serverClosesClientThatDoesNotCompleteHandshake() throws Exception {
+    int port = randomFreePort();
+    ChatServerConfig config =
+        new ChatServerConfig(port, 2, Duration.ofMillis(200), Duration.ofSeconds(5));
+    try (ChatServer server = new ChatServer(config)) {
+      server.start();
+      server.awaitStarted();
+
+      Socket socket = new Socket("127.0.0.1", port);
+      socket.setSoTimeout((int) TimeUnit.SECONDS.toMillis(2));
+      try (ChatConnection silent = new ChatConnection(socket)) {
+        assertEquals(MessageType.NAME_REQUEST, silent.receive().type());
+        assertThrows(IOException.class, silent::receive);
+      }
+    }
+  }
+
   private static void consumeNameRequest(ChatConnection connection) throws IOException {
     ChatMessage request;
     do {
@@ -111,19 +153,21 @@ class NetworkChatIntegrationTest {
         && request.type() != MessageType.NAME_ACCEPTED);
   }
 
-  private static void awaitTextContains(TestClient client, String expected) {
+  private static void awaitTextMessage(
+      TestClient client, String expectedSender, String expectedData) {
     Awaitility.await("wait for broadcast")
         .pollInterval(Duration.ofMillis(200))
         .atMost(Duration.ofSeconds(5))
-        .untilAsserted(() -> assertTrue(containsInQueue(client, expected)));
+        .untilAsserted(() -> assertTrue(containsTextMessage(client, expectedSender, expectedData)));
   }
 
-  private static boolean containsInQueue(TestClient client, String expected) {
+  private static boolean containsTextMessage(
+      TestClient client, String expectedSender, String expectedData) {
     ChatMessage message;
     while ((message = client.drainQueue()) != null) {
       if (MessageType.TEXT.equals(message.type())
-          && message.data() != null
-          && message.data().contains(expected)) {
+          && expectedSender.equals(message.sender())
+          && expectedData.equals(message.data())) {
         return true;
       }
     }

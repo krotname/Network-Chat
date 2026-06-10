@@ -20,11 +20,31 @@ class ChatProtocolTest {
   }
 
   @Test
+  void textMessageKeepsSenderOutOfPayload() {
+    ChatMessage message = ChatMessage.text("hello", "alice");
+    assertEquals("hello", message.data());
+    assertEquals("alice", message.sender());
+  }
+
+  @Test
   void rejectsOverlongPayload() {
     String overlong = "a".repeat(ChatMessage.MAX_DATA_LENGTH + 1);
     assertThrows(
         IllegalArgumentException.class,
         () -> ChatMessage.withData(MessageType.TEXT, overlong, "alice"));
+  }
+
+  @Test
+  void rejectsBlankTextPayload() {
+    assertThrows(IllegalArgumentException.class, () -> ChatMessage.text(null, "alice"));
+    assertThrows(IllegalArgumentException.class, () -> ChatMessage.text(" ", "alice"));
+    assertThrows(
+        IOException.class,
+        () ->
+            ChatProtocol.decode(
+                """
+                {"type":"TEXT","data":"","sender":"alice","timestamp":1,"messageId":"id"}
+                """));
   }
 
   @Test

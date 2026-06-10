@@ -1,5 +1,6 @@
 package dev.krotname.networkchat.client;
 
+import dev.krotname.networkchat.protocol.ChatMessage;
 import dev.krotname.networkchat.util.ConsoleInput;
 import java.io.IOException;
 
@@ -35,8 +36,8 @@ public final class ConsoleChatClient extends ChatClient {
 
   private final class ConsoleSocketThread extends SocketThread {
     @Override
-    protected void processIncomingMessage(String message) {
-      System.out.println(message);
+    protected void processIncomingMessage(ChatMessage message) {
+      System.out.println(formatTextMessage(message));
     }
 
     @Override
@@ -50,8 +51,7 @@ public final class ConsoleChatClient extends ChatClient {
     }
 
     @Override
-    protected void notifyConnectionStatusChanged(boolean clientConnected) {
-      super.notifyConnectionStatusChanged(clientConnected);
+    protected void onConnectionStatusChanged(boolean clientConnected) {
       if (clientConnected) {
         System.out.println("Соединение с сервером установлено");
       } else {

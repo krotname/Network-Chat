@@ -2,13 +2,13 @@ plugins {
     java
     application
     jacoco
-    id("com.diffplug.spotless") version "6.25.0"
+    alias(libs.plugins.spotless)
     id("checkstyle")
-    id("com.github.spotbugs") version "6.0.12"
+    alias(libs.plugins.spotbugs)
 }
 
 group = "dev.krotname"
-version = "1.0.0"
+version = "1.1.0-SNAPSHOT"
 
 java {
     toolchain {
@@ -21,17 +21,17 @@ repositories {
 }
 
 dependencies {
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
+    implementation(libs.jackson.databind)
+    compileOnly(libs.spotbugs.annotations)
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.2")
-    testImplementation("org.awaitility:awaitility:4.2.1")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.awaitility)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 checkstyle {
-    toolVersion = "10.12.5"
+    toolVersion = libs.versions.checkstyle.get()
     configFile = file("config/checkstyle/checkstyle.xml")
 }
 
@@ -119,6 +119,7 @@ tasks.register<JacocoReport>("jacocoAllReport") {
     )
     reports {
         xml.required.set(true)
+        csv.required.set(true)
         html.required.set(true)
     }
 }
@@ -128,7 +129,7 @@ tasks.withType<JacocoCoverageVerification>().configureEach {
 }
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = libs.versions.jacoco.get()
 }
 
 tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
@@ -157,12 +158,12 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.70".toBigDecimal()
+                minimum = "0.80".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.55".toBigDecimal()
+                minimum = "0.65".toBigDecimal()
             }
         }
     }

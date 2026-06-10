@@ -60,15 +60,18 @@ public abstract class ChatClient {
       return;
     }
     if (shouldSendTextFromConsole()) {
-      while (clientConnected) {
-        String text = readInputLine();
-        if (text == null || EXIT_COMMAND.equalsIgnoreCase(text)) {
-          break;
+      try {
+        while (clientConnected) {
+          String text = readInputLine();
+          if (text == null || EXIT_COMMAND.equalsIgnoreCase(text)) {
+            break;
+          }
+          sendTextMessage(text);
         }
-        sendTextMessage(text);
+      } finally {
+        closeConnection();
       }
     }
-    closeConnection();
   }
 
   protected String readInputLine() {
@@ -166,15 +169,15 @@ public abstract class ChatClient {
         switch (type) {
           case USER_ADDED -> informAboutAddingNewUser(message.data());
           case USER_REMOVED -> informAboutDeletingNewUser(message.data());
-          case TEXT -> processIncomingMessage(message.data());
+          case TEXT -> processIncomingMessage(message);
           case ERROR -> LOG.warning("Server error: " + message.data());
           default -> throw new IOException("Unexpected message type: " + type);
         }
       }
     }
 
-    protected void processIncomingMessage(String message) {
-      System.out.println(message);
+    protected void processIncomingMessage(ChatMessage message) {
+      System.out.println(formatTextMessage(message));
     }
 
     protected void informAboutAddingNewUser(String userName) {
@@ -185,8 +188,23 @@ public abstract class ChatClient {
       System.out.printf("Участник вышел: %s%n", userName);
     }
 
-    protected void notifyConnectionStatusChanged(boolean clientConnected) {
+    /**
+     * Updates the shared connection state before client-specific hooks run. Subclasses should
+     * override {@link #onConnectionStatusChanged(boolean)} for UI or console side effects.
+     */
+    protected final void notifyConnectionStatusChanged(boolean clientConnected) {
       setConnectionStatus(clientConnected);
+      onConnectionStatusChanged(clientConnected);
+    }
+
+    protected void onConnectionStatusChanged(boolean clientConnected) {}
+
+    protected final String formatTextMessage(ChatMessage message) {
+      String sender = message.sender();
+      if (sender == null || sender.isBlank()) {
+        return message.data();
+      }
+      return String.format("%s: %s", sender, message.data());
     }
   }
 }

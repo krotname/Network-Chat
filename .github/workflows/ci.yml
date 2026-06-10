@@ -31,6 +31,31 @@ jobs:
           gradle-version: "8.10.2"
       - name: Run tests and checks
         run: ./gradlew check jacocoAllReport --stacktrace
+      - name: Publish coverage summary
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          report="build/reports/jacoco/jacocoAllReport/jacocoAllReport.csv"
+          awk -F, '
+            NR > 1 {
+              branchMissed += $6
+              branchCovered += $7
+              lineMissed += $8
+              lineCovered += $9
+            }
+            END {
+              lineTotal = lineMissed + lineCovered
+              branchTotal = branchMissed + branchCovered
+              lineCoverage = lineTotal == 0 ? 100 : (lineCovered * 100 / lineTotal)
+              branchCoverage = branchTotal == 0 ? 100 : (branchCovered * 100 / branchTotal)
+              print "### JaCoCo coverage"
+              print ""
+              print "| Metric | Coverage |"
+              print "| --- | ---: |"
+              printf "| Lines | %.2f%% |\n", lineCoverage
+              printf "| Branches | %.2f%% |\n", branchCoverage
+            }
+          ' "$report" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage report
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4

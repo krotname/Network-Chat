@@ -7,6 +7,15 @@ updates:
       day: "monday"
       time: "10:00"
     open-pull-requests-limit: 5
+    groups:
+      gradle-quality-stack:
+        patterns:
+          - "com.github.spotbugs*"
+          - "org.junit*"
+          - "org.awaitility*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -14,3 +23,7 @@ updates:
       day: "monday"
       time: "10:30"
     open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
