@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml)
-[![Coverage Gate](https://img.shields.io/badge/coverage%20gate-JaCoCo%2080%25%2B-2ea44f)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
+[![Coverage Gate](https://img.shields.io/badge/coverage%20gate-JaCoCo%20line%2070%25%2B-2ea44f)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/JavaNetworkChat/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/JavaNetworkChat)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13154/badge)](https://www.bestpractices.dev/projects/13154)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
@@ -67,7 +67,7 @@ Actions Summary для Linux job.
 - **UI smoke тесты** (`src/uiTest/java`) — проверка отрисовки состояния окна чата.
 - **План развития** — больше негативных сценариев протокола и проверок отказоустойчивости медленных клиентов.
 
-Для оценки покрытия используется JaCoCo: в CI порог для ядра (`network` + `protocol`) — `80%/65%` (`line`/`branch`).
+Для оценки покрытия используется JaCoCo: в CI порог для ядра (`network` + `protocol`) — `70%/65%` (`line`/`branch`).
 
 ## Troubleshooting
 

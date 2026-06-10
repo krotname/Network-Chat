@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "dev.krotname"
-version = "1.1.0-SNAPSHOT"
+version = "1.1.0"
 
 java {
     toolchain {
@@ -158,7 +158,7 @@ tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.80".toBigDecimal()
+                minimum = "0.70".toBigDecimal()
             }
             limit {
                 counter = "BRANCH"

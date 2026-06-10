@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml/badge.svg)](https://github.com/krotname/JavaNetworkChat/actions/workflows/codeql.yml)
-[![Coverage Gate](https://img.shields.io/badge/coverage%20gate-JaCoCo%2080%25%2B-2ea44f)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
+[![Coverage Gate](https://img.shields.io/badge/coverage%20gate-JaCoCo%20line%2070%25%2B-2ea44f)](https://github.com/krotname/JavaNetworkChat/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/krotname/JavaNetworkChat/badge)](https://securityscorecards.dev/viewer/?uri=github.com/krotname/JavaNetworkChat)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-007396)](https://adoptium.net/)
@@ -87,7 +87,7 @@ The repository runs:
 - `checkstyle` for style and API cleanliness,
 - `spotless` for deterministic formatting,
 - `spotbugs` for bug-pattern analysis,
-- `jaCoCo` line/branch coverage gate on core network/protocol layers (`80%/65%`),
+- `jaCoCo` line/branch coverage gate on core network/protocol layers (`70%/65%`),
 - GitHub Actions pipeline on Linux + Windows,
 - grouped dependency and workflow update signals via Dependabot,
 - CodeQL and OpenSSF Scorecard security scans.
