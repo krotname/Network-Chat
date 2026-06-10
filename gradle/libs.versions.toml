@@ -1,0 +1,22 @@
+[versions]
+awaitility = "4.2.1"
+checkstyle = "10.12.5"
+jackson = "2.17.2"
+jacoco = "0.8.12"
+junit = "5.10.2"
+junit-platform = "1.10.2"
+spotbugs = "6.0.12"
+spotbugs-annotations = "4.8.6"
+spotless = "6.25.0"
+
+[libraries]
+awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs-annotations" }
+
+[plugins]
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

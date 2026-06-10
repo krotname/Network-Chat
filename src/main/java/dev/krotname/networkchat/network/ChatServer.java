@@ -8,11 +8,17 @@ import java.net.Socket;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -21,34 +27,35 @@ import java.util.logging.Logger;
 /** Chat server that authenticates users, keeps sessions, and broadcasts messages. */
 public final class ChatServer implements AutoCloseable {
   private static final Logger LOG = Logger.getLogger(ChatServer.class.getName());
-  private static final int DEFAULT_PORT = 1500;
   private static final int MIN_USER_NAME_LENGTH = 3;
   private static final int MAX_USER_NAME_LENGTH = 64;
 
-  private final int port;
+  private final ChatServerConfig config;
   private final Map<String, ChatConnection> sessions = new ConcurrentHashMap<>();
   private final Object sessionsMonitor = new Object();
   private final AtomicInteger activeClients = new AtomicInteger();
-  private final ExecutorService clientExecutor =
-      Executors.newCachedThreadPool(
-          r -> {
-            Thread t = new Thread(r, "chat-client-handler");
-            t.setDaemon(true);
-            return t;
-          });
+  private final ExecutorService clientExecutor;
   private final ExecutorService acceptorExecutor =
-      Executors.newSingleThreadExecutor(
-          r -> {
-            Thread t = new Thread(r, "chat-acceptor");
-            t.setDaemon(true);
-            return t;
-          });
+      Executors.newSingleThreadExecutor(daemonThreadFactory("chat-acceptor"));
   private final AtomicBoolean running = new AtomicBoolean(false);
   private final CountDownLatch startSignal = new CountDownLatch(1);
   private volatile ServerSocket serverSocket;
 
   public ChatServer(int port) {
-    this.port = port;
+    this(ChatServerConfig.ofPort(port));
+  }
+
+  public ChatServer(ChatServerConfig config) {
+    this.config = Objects.requireNonNull(config, "config");
+    this.clientExecutor =
+        new ThreadPoolExecutor(
+            0,
+            config.maxClients(),
+            30L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
+            daemonThreadFactory("chat-client-handler"),
+            new ThreadPoolExecutor.AbortPolicy());
   }
 
   public static void main(String[] args) throws Exception {
@@ -67,14 +74,14 @@ public final class ChatServer implements AutoCloseable {
     if (args.length == 1) {
       return Integer.parseInt(args[0]);
     }
-    return DEFAULT_PORT;
+    return ChatServerConfig.DEFAULT_PORT;
   }
 
   public void start() throws IOException {
     if (!running.compareAndSet(false, true)) {
       return;
     }
-    serverSocket = new ServerSocket(port);
+    serverSocket = new ServerSocket(config.port());
     acceptorExecutor.execute(this::acceptLoop);
     startSignal.countDown();
   }
@@ -91,12 +98,29 @@ public final class ChatServer implements AutoCloseable {
     while (running.get()) {
       try {
         Socket socket = serverSocket.accept();
-        clientExecutor.execute(() -> handleClient(socket));
+        submitClient(socket);
       } catch (IOException ex) {
         if (running.get()) {
           LOG.log(Level.WARNING, "Accept failed", ex);
         }
       }
+    }
+  }
+
+  private void submitClient(Socket socket) {
+    try {
+      clientExecutor.execute(() -> handleClient(socket));
+    } catch (RejectedExecutionException ex) {
+      rejectClient(socket, "Server is busy, try again later");
+    }
+  }
+
+  private void rejectClient(Socket socket, String reason) {
+    try (socket;
+        ChatConnection connection = new ChatConnection(socket)) {
+      connection.send(ChatMessage.withData(MessageType.ERROR, reason, null));
+    } catch (IOException ex) {
+      LOG.log(Level.FINE, "Unable to send rejection to client", ex);
     }
   }
 
@@ -107,14 +131,18 @@ public final class ChatServer implements AutoCloseable {
   private void handleClient(Socket socket) {
     String userName = null;
     boolean active = false;
-    try (socket;
-        ChatConnection connection = new ChatConnection(socket)) {
-      userName = serverHandshake(connection);
-      sendUsersListToNewClient(connection, userName);
-      activeClients.incrementAndGet();
-      active = true;
-      broadcast(ChatMessage.withData(MessageType.USER_ADDED, userName, null), connection);
-      serverMainLoop(connection, userName);
+    try {
+      socket.setSoTimeout(config.handshakeTimeoutMillis());
+      try (socket;
+          ChatConnection connection = new ChatConnection(socket)) {
+        userName = serverHandshake(connection);
+        socket.setSoTimeout(config.readTimeoutMillis());
+        sendUsersListToNewClient(connection, userName);
+        activeClients.incrementAndGet();
+        active = true;
+        broadcast(ChatMessage.withData(MessageType.USER_ADDED, userName, null), connection);
+        serverMainLoop(connection, userName);
+      }
     } catch (IOException | RuntimeException ex) {
       LOG.log(Level.FINE, "Client session ended", ex);
     } finally {
@@ -182,8 +210,7 @@ public final class ChatServer implements AutoCloseable {
     while (running.get()) {
       ChatMessage message = connection.receive();
       if (message.type() == MessageType.TEXT) {
-        String text = message.data() == null ? "" : message.data();
-        broadcast(ChatMessage.text(String.format("%s: %s", userName, text), userName), connection);
+        broadcast(ChatMessage.text(message.data(), userName), connection);
         continue;
       }
       if (message.type() == MessageType.NAME_ACCEPTED
@@ -256,7 +283,12 @@ public final class ChatServer implements AutoCloseable {
   }
 
   public int getPort() {
-    return port;
+    ServerSocket socket = serverSocket;
+    return socket == null ? config.port() : socket.getLocalPort();
+  }
+
+  public ChatServerConfig getConfig() {
+    return config;
   }
 
   public boolean isRunning() {
@@ -265,5 +297,13 @@ public final class ChatServer implements AutoCloseable {
 
   public int getActiveClients() {
     return activeClients.get();
+  }
+
+  private static ThreadFactory daemonThreadFactory(String threadName) {
+    return task -> {
+      Thread thread = new Thread(task, threadName);
+      thread.setDaemon(true);
+      return thread;
+    };
   }
 }

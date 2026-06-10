@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">Network Chat Swing client</title>
+  <desc id="desc">Screenshot-style diagram of the Swing chat client window.</desc>
+  <rect width="900" height="520" fill="#f4f6f8"/>
+  <rect x="70" y="55" width="760" height="410" rx="8" fill="#ffffff" stroke="#9aa4b2"/>
+  <rect x="70" y="55" width="760" height="34" rx="8" fill="#e8edf3" stroke="#9aa4b2"/>
+  <text x="92" y="77" font-family="Arial, sans-serif" font-size="14" fill="#1f2937">Network Chat</text>
+  <rect x="100" y="112" width="700" height="44" rx="4" fill="#ffffff" stroke="#6b7280"/>
+  <text x="118" y="139" font-family="Arial, sans-serif" font-size="15" fill="#6b7280">Type a message and press Enter</text>
+  <rect x="100" y="178" width="520" height="250" rx="4" fill="#ffffff" stroke="#6b7280"/>
+  <rect x="640" y="178" width="160" height="250" rx="4" fill="#ffffff" stroke="#6b7280"/>
+  <text x="120" y="214" font-family="Arial, sans-serif" font-size="16" fill="#111827">alice: hello</text>
+  <text x="120" y="250" font-family="Arial, sans-serif" font-size="16" fill="#111827">bob: hi there</text>
+  <text x="120" y="286" font-family="Arial, sans-serif" font-size="16" fill="#111827">date_bot_128: Information for alice: 2026</text>
+  <text x="660" y="214" font-family="Arial, sans-serif" font-size="16" fill="#111827">alice</text>
+  <text x="660" y="250" font-family="Arial, sans-serif" font-size="16" fill="#111827">bob</text>
+  <text x="660" y="286" font-family="Arial, sans-serif" font-size="16" fill="#111827">date_bot_128</text>
+</svg>

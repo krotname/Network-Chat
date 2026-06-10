@@ -5,6 +5,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
@@ -19,10 +21,10 @@ public final class ChatWindow {
       justification = "Controller lifecycle is intentionally bound to the view lifecycle.")
   private final ClientGuiController controller;
 
-  private final JFrame frame = new JFrame("Network Chat");
-  private final JTextField messageField = new JTextField(50);
-  private final JTextArea messages = new JTextArea(10, 50);
-  private final JTextArea users = new JTextArea(10, 10);
+  private JFrame frame;
+  private JTextField messageField;
+  private JTextArea messages;
+  private JTextArea users;
 
   public ChatWindow(ClientGuiController controller) {
     this(controller, true);
@@ -30,10 +32,15 @@ public final class ChatWindow {
 
   public ChatWindow(ClientGuiController controller, boolean visible) {
     this.controller = controller;
-    init(visible);
+    runOnEdt(() -> init(visible));
   }
 
   private void init(boolean visible) {
+    frame = new JFrame("Network Chat");
+    messageField = new JTextField(50);
+    messages = new JTextArea(10, 50);
+    users = new JTextArea(10, 10);
+
     messages.setEditable(false);
     users.setEditable(false);
     messageField.setEditable(false);
@@ -54,34 +61,45 @@ public final class ChatWindow {
   }
 
   public String getServerAddress() {
-    return JOptionPane.showInputDialog(
-        frame, "Введите адрес сервера:", "Конфигурация", JOptionPane.QUESTION_MESSAGE);
+    return callOnEdt(
+        () ->
+            JOptionPane.showInputDialog(
+                frame, "Введите адрес сервера:", "Конфигурация", JOptionPane.QUESTION_MESSAGE));
   }
 
   public int getServerPort() {
     while (true) {
       String input =
-          JOptionPane.showInputDialog(
-              frame, "Введите порт сервера:", "Конфигурация", JOptionPane.QUESTION_MESSAGE);
+          callOnEdt(
+              () ->
+                  JOptionPane.showInputDialog(
+                      frame,
+                      "Введите порт сервера:",
+                      "Конфигурация",
+                      JOptionPane.QUESTION_MESSAGE));
       if (input == null || input.isBlank()) {
         continue;
       }
       try {
         return Integer.parseInt(input.trim());
       } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(
-            frame, "Некорректный порт", "Ошибка", JOptionPane.ERROR_MESSAGE);
+        runOnEdt(
+            () ->
+                JOptionPane.showMessageDialog(
+                    frame, "Некорректный порт", "Ошибка", JOptionPane.ERROR_MESSAGE));
       }
     }
   }
 
   public String getUserName() {
-    return JOptionPane.showInputDialog(
-        frame, "Введите имя:", "Конфигурация", JOptionPane.QUESTION_MESSAGE);
+    return callOnEdt(
+        () ->
+            JOptionPane.showInputDialog(
+                frame, "Введите имя:", "Конфигурация", JOptionPane.QUESTION_MESSAGE));
   }
 
   public void notifyConnectionStatusChanged(boolean clientConnected) {
-    messageField.setEditable(clientConnected);
+    runOnEdt(() -> messageField.setEditable(clientConnected));
     SwingUtilities.invokeLater(
         () ->
             JOptionPane.showMessageDialog(
@@ -126,14 +144,27 @@ public final class ChatWindow {
   }
 
   public String getMessagesText() {
-    return messages.getText();
+    return callOnEdt(messages::getText);
   }
 
   public String getUsersText() {
-    return users.getText();
+    return callOnEdt(users::getText);
+  }
+
+  public boolean isMessageInputEditable() {
+    return callOnEdt(messageField::isEditable);
   }
 
   public void dispose() {
-    frame.dispose();
+    runOnEdt(frame::dispose);
+  }
+
+  private <T> T callOnEdt(Supplier<T> action) {
+    if (SwingUtilities.isEventDispatchThread()) {
+      return action.get();
+    }
+    AtomicReference<T> result = new AtomicReference<>();
+    runOnEdt(() -> result.set(action.get()));
+    return result.get();
   }
 }
