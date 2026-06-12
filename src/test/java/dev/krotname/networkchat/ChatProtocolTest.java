@@ -24,6 +24,20 @@ class ChatProtocolTest {
     ChatMessage message = ChatMessage.text("hello", "alice");
     assertEquals("hello", message.data());
     assertEquals("alice", message.sender());
+    assertEquals(ChatMessage.GENERAL_ROOM, message.room());
+    assertEquals(MessageType.ROOM_TEXT, message.type());
+  }
+
+  @Test
+  void roundTripsRoomAndPrivateMetadata() throws IOException {
+    ChatMessage roomMessage = ChatMessage.roomText("hello", "alice", "dev");
+    ChatMessage privateMessage = ChatMessage.privateText("secret", "alice", "bob");
+
+    assertEquals(roomMessage, ChatProtocol.decode(ChatProtocol.encode(roomMessage)));
+    assertEquals(privateMessage, ChatProtocol.decode(ChatProtocol.encode(privateMessage)));
+    assertEquals("dev", roomMessage.room());
+    assertEquals("bob", privateMessage.recipient());
+    assertEquals(ChatMessage.PROTOCOL_VERSION, privateMessage.protocolVersion());
   }
 
   @Test

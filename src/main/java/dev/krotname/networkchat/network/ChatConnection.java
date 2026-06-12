@@ -58,9 +58,16 @@ public final class ChatConnection implements Closeable {
   public void close() throws IOException {
     IOException first = null;
     try {
-      writer.close();
+      socket.close();
     } catch (IOException ex) {
       first = ex;
+    }
+    try {
+      writer.close();
+    } catch (IOException ex) {
+      if (first == null) {
+        first = ex;
+      }
     }
     try {
       reader.close();
@@ -69,7 +76,6 @@ public final class ChatConnection implements Closeable {
         first = ex;
       }
     }
-    socket.close();
     if (first != null) {
       throw first;
     }

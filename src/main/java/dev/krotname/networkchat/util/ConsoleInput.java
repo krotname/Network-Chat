@@ -18,7 +18,11 @@ public final class ConsoleInput {
     while (line != null && line.isBlank()) {
       line = READER.readLine();
     }
-    return line == null ? "" : line.trim();
+    return line == null ? null : line.trim();
+  }
+
+  public static String readLine() throws IOException {
+    return READER.readLine();
   }
 
   public static int readInt(String message) throws IOException {

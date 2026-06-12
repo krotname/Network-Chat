@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
@@ -68,5 +69,31 @@ class ChatServerConfigTest {
     assertEquals(0, server.getConfig().port());
     assertFalse(server.isRunning());
     server.close();
+  }
+
+  @Test
+  void supportsAccountsHistoryAndTlsConfig() {
+    Path accounts = Path.of("accounts.csv");
+    Path history = Path.of("history.jsonl");
+    TlsServerConfig tls = TlsServerConfig.enabled(Path.of("chat.p12"), "changeit");
+
+    ChatServerConfig config =
+        ChatServerConfig.ofPort(1600)
+            .withAccounts(accounts)
+            .withHistory(history, 25, 5)
+            .withTls(tls);
+
+    assertEquals(accounts, config.accountFile());
+    assertEquals(history, config.historyFile());
+    assertEquals(25, config.historyLimit());
+    assertEquals(5, config.historyReplayLimit());
+    assertEquals(tls, config.tls());
+  }
+
+  @Test
+  void rejectsIncompleteTlsConfig() {
+    assertThrows(IllegalArgumentException.class, () -> TlsServerConfig.enabled(null, "changeit"));
+    assertThrows(
+        IllegalArgumentException.class, () -> TlsServerConfig.enabled(Path.of("chat.p12"), ""));
   }
 }

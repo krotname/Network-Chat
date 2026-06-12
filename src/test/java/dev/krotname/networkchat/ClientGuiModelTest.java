@@ -1,9 +1,12 @@
 package dev.krotname.networkchat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.krotname.networkchat.client.gui.ClientGuiModel;
+import dev.krotname.networkchat.protocol.ChatMessage;
+import dev.krotname.networkchat.protocol.MessageType;
 import org.junit.jupiter.api.Test;
 
 class ClientGuiModelTest {
@@ -13,14 +16,86 @@ class ClientGuiModelTest {
     ClientGuiModel model = new ClientGuiModel();
     model.addUser("alice");
     model.addUser("bob");
-    model.setNewMessage("hello");
+    ChatMessage message = new ChatMessage(MessageType.TEXT, "hello", "alice", 1L, "id-1");
+    assertTrue(model.addTextMessage(message, "alice"));
 
     assertTrue(model.getAllUserNames().contains("alice"));
-    assertEquals("hello", model.getNewMessage());
+    assertEquals("hello", model.getTimelineEntries().getFirst().text());
+    assertTrue(model.getTimelineEntries().getFirst().ownMessage());
     assertEquals(2, model.getAllUserNames().size());
+    assertEquals(2, model.getUserCount());
 
     model.deleteUser("alice");
     assertEquals(1, model.getAllUserNames().size());
     model.deleteUser("unknown");
+
+    model.clearUsers();
+    assertEquals(0, model.getUserCount());
+  }
+
+  @Test
+  void tracksRoomsAndJoinedRooms() {
+    ClientGuiModel model = new ClientGuiModel();
+
+    model.addRoom("general");
+    model.joinRoom("dev");
+    model.leaveRoom("dev");
+
+    assertTrue(model.getAllRoomNames().contains("general"));
+    assertTrue(model.getAllRoomNames().contains("dev"));
+    assertFalse(model.isJoinedRoom("dev"));
+
+    model.clearRooms();
+
+    assertTrue(model.getAllRoomNames().isEmpty());
+    assertTrue(model.getJoinedRoomNames().isEmpty());
+  }
+
+  @Test
+  void deduplicatesTimelineByMessageId() {
+    ClientGuiModel model = new ClientGuiModel();
+    ChatMessage message = new ChatMessage(MessageType.TEXT, "hello", "alice", 1L, "same-id");
+
+    assertTrue(model.addTextMessage(message, "bob"));
+    assertFalse(model.addTextMessage(message, "bob"));
+
+    assertEquals(1, model.getTimelineEntries().size());
+  }
+
+  @Test
+  void boundsTimelineAndCanClearIt() {
+    ClientGuiModel model = new ClientGuiModel();
+    for (int i = 0; i < ClientGuiModel.MAX_TIMELINE_ENTRIES + 5; i++) {
+      model.addServiceMessage("event " + i);
+    }
+
+    assertEquals(ClientGuiModel.MAX_TIMELINE_ENTRIES, model.getTimelineEntries().size());
+
+    model.clearTimeline();
+
+    assertEquals(0, model.getTimelineEntries().size());
+  }
+
+  @Test
+  void searchesAndExportsTimeline() {
+    ClientGuiModel model = new ClientGuiModel();
+    model.addTextMessage(ChatMessage.roomText("deploy ready", "alice", "dev"), "bob");
+    model.addTextMessage(ChatMessage.privateText("secret note", "bob", "alice"), "alice");
+    model.addTextMessage(
+        new ChatMessage(MessageType.ROOM_TEXT, "dated event", "carol", 1_780_000_000_000L, "date"),
+        "alice");
+
+    assertEquals(1, model.searchTimeline("deploy").size());
+    assertEquals(1, model.searchTimeline("secret").size());
+    assertEquals(1, model.searchTimeline("2026-05-28").size());
+    assertEquals(1, model.searchTimeline("1780000000000").size());
+
+    String json = model.exportTimelineAsJson();
+    String csv = model.exportTimelineAsCsv();
+
+    assertTrue(json.contains("deploy ready"));
+    assertTrue(json.contains("\"room\":\"dev\""));
+    assertTrue(csv.contains("secret note"));
+    assertTrue(csv.startsWith("type,messageId"));
   }
 }

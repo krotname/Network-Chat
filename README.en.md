@@ -14,7 +14,12 @@ Network Chat is a Java 21 chat application over TCP sockets with:
 - a resilient server with user handshake and broadcast.
 - a console client.
 - a bot client with date/time commands.
-- a Swing GUI client using MVC style structure.
+- a Swing GUI client with an embedded connection panel, retry/cancel flow, saved last settings,
+  local message timeline, rooms, private messages, and MVC style structure.
+- optional file-backed message history with room replay after server restart.
+- optional TLS mode, token-based accounts with `USER`/`ADMIN` roles, and the admin `/health`
+  command.
+- a Windows release zip with launch scripts, checksums, and provenance metadata.
 - reproducible Gradle build, tests, CI, and quality gates.
 
 ![Swing GUI client](docs/images/gui-client.svg)
@@ -39,6 +44,48 @@ Server and clients can also be run directly with Java by building jars from Grad
 The default server port is `1500`. Programmatic server startup can use `ChatServerConfig` to set the
 port, maximum client count, handshake timeout, and post-handshake read timeout.
 
+To enable file-backed history:
+
+```bash
+./gradlew runServer --args="--port 1500 --history build/chat-history.jsonl"
+```
+
+To enable accounts, first generate rows for `accounts.csv`:
+
+```bash
+./gradlew createAccount --args="alice USER secret" >> build/accounts.csv
+./gradlew createAccount --args="admin ADMIN admin-secret" >> build/accounts.csv
+./gradlew runServer --args="--port 1500 --accounts build/accounts.csv"
+```
+
+Clients send the token through the GUI `Token` field or the `NETWORK_CHAT_TOKEN` environment
+variable. Admin users can send `/health` and receive a private server status response.
+
+To enable TLS, create a Java keystore for the server:
+
+```bash
+keytool -genkeypair -alias network-chat -keyalg RSA -keysize 3072 -validity 365 \
+  -keystore build/network-chat.p12 -storetype PKCS12 -storepass changeit
+./gradlew runServer --args="--port 1500 --tls-keystore build/network-chat.p12 --tls-password changeit"
+```
+
+Clients enable TLS through environment variables:
+
+```powershell
+$env:NETWORK_CHAT_TLS="true"
+$env:NETWORK_CHAT_TRUSTSTORE="build/network-chat.p12"
+$env:NETWORK_CHAT_TRUSTSTORE_PASSWORD="changeit"
+./gradlew runGuiClient
+```
+
+To build a no-Gradle release package for end users:
+
+```bash
+./gradlew releaseBundle
+```
+
+Artifacts are written to `build/release`: the Windows zip, `checksums.txt`, and `provenance.json`.
+
 ## Architecture and protocol
 
 The compact architecture contract is documented in [docs/architecture.md](docs/architecture.md).
@@ -46,7 +93,21 @@ The compact architecture contract is documented in [docs/architecture.md](docs/a
 - `ChatServer` accepts TCP connections and handles clients in a bounded executor.
 - `ChatConnection` reads and writes one-line UTF-8 JSON frames.
 - `ChatProtocol` serializes `ChatMessage`.
+- `ChatMessage` carries `protocolVersion`; unversioned clients receive an explicit `ERROR`.
 - For `TEXT` messages, `data` contains only raw text and `sender` contains the author.
+- `TEXT` messages are broadcast to every client, including the sender, so users see their own sent
+  messages in the timeline.
+- `ROOM_TEXT` is delivered only to room members; `PRIVATE_TEXT` is delivered only to the sender and
+  recipient.
+- The GUI keeps a bounded local timeline for the current session, renders `USER_ADDED`/`USER_REMOVED`
+  as service events, uses `messageId` for deduplication, and supports search by text, sender,
+  date/timestamp, room, recipient plus JSON/CSV export.
+- When history is enabled, the server stores `ROOM_TEXT`/`PRIVATE_TEXT` frames as JSONL, bounds the
+  history size, migrates legacy unversioned `TEXT` records, and replays recent room messages on
+  join.
+- When accounts are enabled, the server accepts only `USER_NAME` frames with a valid token; roles are
+  used for admin-only commands.
+- TLS is enabled through server configuration and client environment variables.
 - Console and Swing clients format display text such as `alice: hello`.
 - The bot client reads date/time commands from `data` and uses the author from `sender`.
 
@@ -124,8 +185,16 @@ This repository is organized for maintainability:
 - GUI does not render in CI: UI smoke tests skip automatically in headless environments.
 - Client disconnects immediately: check username uniqueness and nickname length (`3..64`, letters, digits, `_`, `-`).
 - Client receives `Server is busy`: the configured `ChatServerConfig.maxClients` limit has been reached.
+- GUI shows `No connection`: check host/port and use the reconnect button; the last entered settings
+  are stored locally.
+- A corrupt line in the history file is skipped during startup; valid history still loads.
+- `Authentication failed`: check the user row in `accounts.csv` and the GUI token field or
+  `NETWORK_CHAT_TOKEN`.
+- TLS trust errors: set `NETWORK_CHAT_TRUSTSTORE` on the client or use a certificate trusted by the
+  JVM.
 
 ## Roadmap
 
-- v1.1.x: stabilize protocol/server lifecycle, expand negative tests, and improve documentation.
-- Later: rooms, message history, TLS, and persistent accounts as separate product-focused phases.
+- v1.6.x: TLS, token accounts, release packaging, and security hardening are implemented in the
+  current line.
+- Later: persistent user profiles and richer administration as separate product-focused phases.

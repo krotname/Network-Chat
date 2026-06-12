@@ -1,3 +1,6 @@
+import java.security.MessageDigest
+import java.time.Instant
+
 plugins {
     java
     application
@@ -8,7 +11,7 @@ plugins {
 }
 
 group = "dev.krotname"
-version = "1.1.0"
+version = "1.6.0"
 
 java {
     toolchain {
@@ -27,6 +30,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.awaitility)
+    testCompileOnly(libs.spotbugs.annotations)
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
@@ -204,6 +208,7 @@ tasks.register<JavaExec>("runClient") {
     description = "Run console client"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("dev.krotname.networkchat.client.ConsoleChatClient")
+    standardInput = System.`in`
 }
 
 tasks.register<JavaExec>("runBotClient") {
@@ -218,4 +223,124 @@ tasks.register<JavaExec>("runGuiClient") {
     description = "Run Swing client"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass.set("dev.krotname.networkchat.client.ClientGuiController")
+}
+
+tasks.register<JavaExec>("createAccount") {
+    group = "application"
+    description = "Print one accounts.csv row: --args=\"alice USER secret\""
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("dev.krotname.networkchat.network.AccountTool")
+}
+
+val releasePackageName = "network-chat-${project.version}"
+val releaseStagingDir = layout.buildDirectory.dir("release/staging/$releasePackageName")
+val releaseDir = layout.buildDirectory.dir("release")
+
+tasks.register<Sync>("prepareReleasePackage") {
+    group = "distribution"
+    description = "Prepare a runnable Windows release directory"
+    dependsOn(tasks.named("jar"))
+    into(releaseStagingDir)
+    from(tasks.named<Jar>("jar")) {
+        into("lib")
+    }
+    from(configurations.runtimeClasspath) {
+        into("lib")
+    }
+    from("scripts/release") {
+        into("bin")
+    }
+    from(listOf("README.md", "README.en.md", "LICENSE", "SECURITY.md")) {
+        into("docs")
+    }
+}
+
+val packageWindowsZip = tasks.register<Zip>("packageWindowsZip") {
+    group = "distribution"
+    description = "Build a runnable Windows zip with server, console, bot, and GUI launchers"
+    dependsOn(tasks.named("prepareReleasePackage"))
+    archiveFileName.set("$releasePackageName-windows.zip")
+    destinationDirectory.set(releaseDir)
+    from(releaseStagingDir) {
+        into(releasePackageName)
+    }
+}
+
+val provenanceFile = layout.buildDirectory.file("release/provenance.json")
+
+tasks.register("releaseProvenance") {
+    group = "distribution"
+    description = "Write local release provenance metadata for the Windows zip"
+    dependsOn(packageWindowsZip)
+    inputs.file(packageWindowsZip.flatMap { it.archiveFile })
+    outputs.file(provenanceFile)
+    doLast {
+        val artifact = packageWindowsZip.get().archiveFile.get().asFile
+        val sha256 = sha256(artifact)
+        val content = """
+            {
+              "predicateType": "https://slsa.dev/provenance/v1",
+              "buildType": "gradle:packageWindowsZip",
+              "builder": {
+                "id": "JavaNetworkChat Gradle build"
+              },
+              "subject": [
+                {
+                  "name": "${artifact.name}",
+                  "digest": {
+                    "sha256": "$sha256"
+                  }
+                }
+              ],
+              "metadata": {
+                "project": "${project.name}",
+                "version": "${project.version}",
+                "buildStartedOn": "${Instant.now()}"
+              }
+            }
+        """.trimIndent()
+        provenanceFile.get().asFile.writeText(content)
+    }
+}
+
+tasks.register("releaseChecksums") {
+    group = "distribution"
+    description = "Write SHA-256 checksums for release artifacts"
+    dependsOn(packageWindowsZip, tasks.named("releaseProvenance"))
+    val checksumsFile = layout.buildDirectory.file("release/checksums.txt")
+    inputs.files(packageWindowsZip.flatMap { it.archiveFile }, provenanceFile)
+    outputs.file(checksumsFile)
+    doLast {
+        val artifacts =
+            listOf(
+                packageWindowsZip.get().archiveFile.get().asFile,
+                provenanceFile.get().asFile,
+            )
+        checksumsFile.get().asFile.writeText(
+            artifacts.joinToString(System.lineSeparator()) {
+                "${sha256(it)}  ${it.name}"
+            } + System.lineSeparator()
+        )
+    }
+}
+
+tasks.register("releaseBundle") {
+    group = "distribution"
+    description = "Build release zip, checksums, and provenance metadata"
+    dependsOn(packageWindowsZip, tasks.named("releaseProvenance"), tasks.named("releaseChecksums"))
+}
+
+fun sha256(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) {
+                break
+            }
+            digest.update(buffer, 0, read)
+        }
+    }
+    return digest.digest().joinToString("") { "%02x".format(it.toInt() and 0xff) }
 }
